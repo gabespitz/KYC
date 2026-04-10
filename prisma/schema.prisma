@@ -1,0 +1,122 @@
+// KYC tool — Prisma schema
+// SQLite for MVP. Schema is portable to Postgres (no SQLite-specific types).
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  role      String     // "sales" | "legal" | "accounts" | "admin"
+  createdAt DateTime   @default(now())
+  prospects Prospect[]
+}
+
+model Prospect {
+  id           String         @id @default(cuid())
+  legalName    String
+  website      String?
+  industry     String?
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  notes        String?
+  status       String         @default("RESEARCH") // RESEARCH | LEGAL | NEGOTIATION | SIGNED | HANDED_OFF | REJECTED
+  decision     String? // GO | NO_GO | HOLD
+  ownerId      String
+  owner        User           @relation(fields: [ownerId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  research     ResearchReport[]
+  documents    LegalDocument[]
+  events       NegotiationEvent[]
+  exports      CoderfullExport[]
+}
+
+model ResearchReport {
+  id             String   @id @default(cuid())
+  prospectId     String
+  prospect       Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  summary        String
+  recommendation String   // GO | NO_GO | HOLD
+  payload        String   // JSON-encoded full report
+  sources        String   // JSON-encoded array of {title,url,snippet}
+  modelUsed      String
+  createdById    String
+  createdAt      DateTime @default(now())
+}
+
+model LegalDocument {
+  id               String            @id @default(cuid())
+  prospectId       String
+  prospect         Prospect          @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  kind             String            // MSA | SOW | NDA | DPA | OTHER
+  title            String
+  currentVersionId String?
+  createdAt        DateTime          @default(now())
+  versions         DocumentVersion[]
+  redlines         RedlineComment[]
+}
+
+model DocumentVersion {
+  id            String           @id @default(cuid())
+  documentId    String
+  document      LegalDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  source        String           // CLIENT | US
+  storageKey    String
+  mimeType      String
+  fileName      String
+  extractedText String?
+  uploadedById  String
+  createdAt     DateTime         @default(now())
+  redlines      RedlineComment[]
+}
+
+model RedlineComment {
+  id            String           @id @default(cuid())
+  documentId    String
+  document      LegalDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionId     String
+  version       DocumentVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  clauseId      String
+  originalText  String
+  suggestedText String
+  riskLevel     String           // LOW | MEDIUM | HIGH | CRITICAL
+  category      String
+  rationale     String
+  status        String           @default("OPEN") // OPEN | ACCEPTED | REJECTED | MODIFIED
+  humanNote     String?
+  createdBy     String           // CLAUDE | HUMAN
+  createdAt     DateTime         @default(now())
+}
+
+model NegotiationEvent {
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  type       String   // VERSION_SENT | VERSION_RECEIVED | COMMENT | STATUS_CHANGE | SIGNED
+  payload    String   // JSON-encoded
+  actor      String
+  createdAt  DateTime @default(now())
+}
+
+model CoderfullExport {
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  payload    String   // JSON-encoded Coderfull payload
+  draftEmail String   // JSON-encoded {subject,bodyMarkdown,to[]}
+  status     String   @default("DRAFT") // DRAFT | SENT | FAILED
+  externalId String?
+  error      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
