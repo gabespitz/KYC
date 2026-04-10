@@ -1,6 +1,8 @@
+import { Search, ExternalLink } from "lucide-react";
 import { db } from "@/lib/db";
 import { safeJsonParse } from "@/lib/utils";
 import type { ResearchReport, Source } from "@/lib/claude/schemas";
+import { decisionBadge, riskBadge } from "@/lib/badges";
 import { RunResearchButton } from "./run-research-button";
 
 export const dynamic = "force-dynamic";
@@ -16,68 +18,80 @@ export default async function ResearchPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const data = report ? safeJsonParse<ResearchReport | null>(report.payload, null) : null;
+  const data = report
+    ? safeJsonParse<ResearchReport | null>(report.payload, null)
+    : null;
   const sources = report ? safeJsonParse<Source[]>(report.sources, []) : [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="stack-6">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+        }}
+      >
         <div>
-          <h2 className="text-lg font-semibold">Phase 1 — Research & Evaluation</h2>
-          <p className="text-sm text-muted-foreground">
-            Run a Claude-powered KYC investigation. Produces a structured report
-            with a GO / NO_GO / HOLD recommendation.
+          <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
+            Phase 1 — Research & evaluation
+          </h2>
+          <p className="sec-sub" style={{ marginTop: 4 }}>
+            Run a Claude-powered KYC investigation. Produces a structured report with a GO / NO-GO / HOLD recommendation.
           </p>
         </div>
         <RunResearchButton id={id} hasReport={!!report} />
       </div>
 
       {!data ? (
-        <div className="border rounded-lg p-8 text-center text-muted-foreground">
-          No research report yet. Click <strong>Run research</strong> above.
+        <div className="card">
+          <div className="empty-state">
+            <div className="empty-icon">
+              <Search size={28} />
+            </div>
+            <h3>No research report yet</h3>
+            <p>Click <strong>Run research</strong> above to start the Claude-powered investigation.</p>
+          </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          <Section title="Summary">
-            <p className="text-sm">{data.summary}</p>
-            <p className="text-sm mt-3">
-              <span className="font-medium">Recommendation: </span>
-              <span className={`badge badge-${data.recommendation.toLowerCase()}`}>
-                {data.recommendation}
-              </span>
-            </p>
-            <p className="text-sm mt-2">
-              <span className="font-medium">Rationale: </span>
-              {data.rationale}
-            </p>
-          </Section>
+        <div className="stack-4">
+          {/* Prominent recommendation card */}
+          <RecommendationCard data={data} />
 
           <Section title="Company">
-            <Field label="Legal name" value={data.company.legalName} />
-            {data.company.aliases.length > 0 && (
-              <Field label="Aliases" value={data.company.aliases.join(", ")} />
-            )}
-            <Field label="HQ" value={data.company.hq ?? "—"} />
-            <Field label="Founded" value={data.company.founded ?? "—"} />
-            <Field label="Employees" value={data.company.employees ?? "—"} />
-            <Field label="Industry" value={data.company.industry ?? "—"} />
-            <p className="mt-3 text-sm">{data.businessProfile}</p>
+            <div className="stack-2">
+              <Field label="Legal name" value={data.company.legalName} />
+              {data.company.aliases && data.company.aliases.length > 0 && (
+                <Field label="Aliases" value={data.company.aliases.join(", ")} />
+              )}
+              <Field label="HQ" value={data.company.hq ?? "—"} />
+              <Field label="Founded" value={data.company.founded ?? "—"} />
+              <Field label="Employees" value={data.company.employees ?? "—"} />
+              <Field label="Industry" value={data.company.industry ?? "—"} />
+            </div>
+            <p style={{ fontSize: 14, marginTop: 16, marginBottom: 0, lineHeight: 1.6 }}>
+              {data.businessProfile}
+            </p>
           </Section>
 
           <Section title="Creditworthiness">
-            <p className="text-sm">
-              <span className="font-medium">Score:</span>{" "}
-              {data.creditworthiness.score}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>Score:</span>
+              <span className={scoreBadgeClass(data.creditworthiness.score)}>
+                <span className="badge-dot"></span>
+                {data.creditworthiness.score}
+              </span>
+            </div>
             {data.creditworthiness.signals.length > 0 && (
-              <ul className="list-disc ml-5 mt-2 text-sm space-y-1">
+              <ul style={{ fontSize: 14, paddingLeft: 20, marginTop: 8, marginBottom: 0 }}>
                 {data.creditworthiness.signals.map((s, i) => (
-                  <li key={i}>{s}</li>
+                  <li key={i} style={{ marginBottom: 4 }}>{s}</li>
                 ))}
               </ul>
             )}
             {data.creditworthiness.notes && (
-              <p className="text-sm mt-2 text-muted-foreground">
+              <p className="muted" style={{ fontSize: 13, marginTop: 12, marginBottom: 0 }}>
                 {data.creditworthiness.notes}
               </p>
             )}
@@ -85,17 +99,17 @@ export default async function ResearchPage({
 
           <Section title="Vendor history">
             {data.vendorHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="muted" style={{ fontSize: 14, margin: 0 }}>
                 No vendor history found.
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }} className="stack-3">
                 {data.vendorHistory.map((v, i) => (
-                  <li key={i} className="text-sm">
-                    <span className="font-medium">{v.vendor}</span> —{" "}
-                    {v.relationship}
+                  <li key={i} style={{ fontSize: 14 }}>
+                    <div style={{ fontWeight: 600 }}>{v.vendor}</div>
+                    <div className="muted" style={{ fontSize: 13 }}>{v.relationship}</div>
                     {v.notes && (
-                      <div className="text-muted-foreground">{v.notes}</div>
+                      <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>{v.notes}</div>
                     )}
                   </li>
                 ))}
@@ -105,14 +119,12 @@ export default async function ResearchPage({
 
           <Section title="Trust & reputation">
             {data.trust.reputationNotes && (
-              <p className="text-sm">{data.trust.reputationNotes}</p>
+              <p style={{ fontSize: 14, marginBottom: 12 }}>{data.trust.reputationNotes}</p>
             )}
             {data.trust.litigationFlags.length > 0 && (
-              <div className="mt-2">
-                <div className="text-xs font-medium uppercase text-muted-foreground">
-                  Litigation flags
-                </div>
-                <ul className="list-disc ml-5 text-sm">
+              <div style={{ marginBottom: 12 }}>
+                <div className="overline" style={{ marginBottom: 6 }}>Litigation flags</div>
+                <ul style={{ fontSize: 14, paddingLeft: 20, margin: 0 }}>
                   {data.trust.litigationFlags.map((f, i) => (
                     <li key={i}>{f}</li>
                   ))}
@@ -120,59 +132,86 @@ export default async function ResearchPage({
               </div>
             )}
             {data.trust.sanctionsFlags.length > 0 && (
-              <div className="mt-2">
-                <div className="text-xs font-medium uppercase text-muted-foreground">
-                  Sanctions / PEP flags
-                </div>
-                <ul className="list-disc ml-5 text-sm">
+              <div>
+                <div className="overline" style={{ marginBottom: 6 }}>Sanctions / PEP flags</div>
+                <ul style={{ fontSize: 14, paddingLeft: 20, margin: 0 }}>
                   {data.trust.sanctionsFlags.map((f, i) => (
                     <li key={i}>{f}</li>
                   ))}
                 </ul>
               </div>
             )}
+            {!data.trust.reputationNotes &&
+              data.trust.litigationFlags.length === 0 &&
+              data.trust.sanctionsFlags.length === 0 && (
+                <p className="muted" style={{ fontSize: 14, margin: 0 }}>
+                  No reputation concerns flagged.
+                </p>
+              )}
           </Section>
 
           <Section title="Risks">
             {data.risks.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No risks recorded.</p>
+              <p className="muted" style={{ fontSize: 14, margin: 0 }}>No risks recorded.</p>
             ) : (
-              <ul className="space-y-2">
-                {data.risks.map((r, i) => (
-                  <li
-                    key={i}
-                    className={`text-sm border-l-4 pl-3 ${riskBorder(r.severity)}`}
-                  >
-                    <span className="font-medium">[{r.severity}]</span>{" "}
-                    {r.description}
-                    {r.evidence && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {r.evidence}
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }} className="stack-3">
+                {data.risks.map((r, i) => {
+                  const rb = riskBadge(r.severity);
+                  return (
+                    <li
+                      key={i}
+                      style={{
+                        fontSize: 14,
+                        borderLeft: `3px solid ${riskBorderColor(r.severity)}`,
+                        paddingLeft: 12,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span className={rb.className}>
+                          <span className="badge-dot"></span>
+                          {rb.label}
+                        </span>
                       </div>
-                    )}
-                  </li>
-                ))}
+                      <div>{r.description}</div>
+                      {r.evidence && (
+                        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
+                          {r.evidence}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Section>
 
           <Section title={`Sources (${sources.length})`}>
             {sources.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sources cited.</p>
+              <p className="muted" style={{ fontSize: 14, margin: 0 }}>
+                No sources cited.
+              </p>
             ) : (
-              <ul className="space-y-2 text-sm">
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }} className="stack-3">
                 {sources.map((s, i) => (
-                  <li key={i}>
+                  <li key={i} style={{ fontSize: 14 }}>
                     <a
                       href={s.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-primary underline"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontWeight: 500,
+                      }}
                     >
                       {s.title}
+                      <ExternalLink size={12} />
                     </a>
                     {s.snippet && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="muted" style={{ fontSize: 13, marginTop: 2, marginBottom: 0 }}>
                         {s.snippet}
                       </p>
                     )}
@@ -187,6 +226,50 @@ export default async function ResearchPage({
   );
 }
 
+function RecommendationCard({ data }: { data: ResearchReport }) {
+  const rec = decisionBadge(data.recommendation);
+  const bgColor =
+    data.recommendation === "GO"
+      ? "var(--success-50)"
+      : data.recommendation === "NO_GO"
+      ? "var(--error-50)"
+      : "var(--warning-50)";
+  return (
+    <div
+      className="card"
+      style={{ background: bgColor, borderWidth: 1 }}
+    >
+      <div className="overline" style={{ marginBottom: 12 }}>
+        Recommendation
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          marginBottom: 14,
+          flexWrap: "wrap",
+        }}
+      >
+        <span className={`${rec.className} badge-lg`} style={{ fontSize: 16, padding: "8px 16px" }}>
+          <span className="badge-dot"></span>
+          {rec.label}
+        </span>
+        <div className="num" style={{ fontSize: 13, color: "var(--muted)" }}>
+          Research run · Claude
+        </div>
+      </div>
+      <p style={{ fontSize: 15, lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+        {data.summary}
+      </p>
+      <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 12, marginBottom: 0 }}>
+        <strong>Rationale: </strong>
+        {data.rationale}
+      </p>
+    </div>
+  );
+}
+
 function Section({
   title,
   children,
@@ -195,10 +278,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border rounded-lg p-4">
-      <h3 className="text-xs font-medium uppercase text-muted-foreground mb-3">
+    <div className="card">
+      <div className="overline" style={{ marginBottom: 12 }}>
         {title}
-      </h3>
+      </div>
       {children}
     </div>
   );
@@ -206,22 +289,27 @@ function Section({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-sm">
-      <span className="text-muted-foreground">{label}:</span>{" "}
-      <span className="font-medium">{value}</span>
+    <div style={{ fontSize: 14 }}>
+      <span className="muted">{label}:</span>{" "}
+      <span style={{ fontWeight: 500 }}>{value}</span>
     </div>
   );
 }
 
-function riskBorder(severity: string) {
+function scoreBadgeClass(score: string): string {
+  switch (score) {
+    case "strong": return "badge badge-success";
+    case "adequate": return "badge badge-brand";
+    case "weak": return "badge badge-error";
+    default: return "badge badge-gray";
+  }
+}
+
+function riskBorderColor(severity: string): string {
   switch (severity) {
-    case "CRITICAL":
-      return "border-rose-500";
-    case "HIGH":
-      return "border-orange-500";
-    case "MEDIUM":
-      return "border-amber-500";
-    default:
-      return "border-emerald-500";
+    case "CRITICAL": return "var(--error-500)";
+    case "HIGH": return "#F97316";
+    case "MEDIUM": return "var(--warning-500)";
+    default: return "var(--success-500)";
   }
 }

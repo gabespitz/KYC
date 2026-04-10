@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { CheckCircle2, MessageSquarePlus } from "lucide-react";
 
 export function NegotiationControls({
   id,
@@ -45,52 +46,71 @@ export function NegotiationControls({
   }
 
   return (
-    <div className="border rounded-lg p-4 space-y-4">
-      <form onSubmit={logEvent} className="grid sm:grid-cols-5 gap-3 items-end">
-        <div className="sm:col-span-1">
-          <label className="block text-xs font-medium mb-1">Event type</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full border rounded-md px-2 py-1.5 text-sm"
-          >
-            <option value="COMMENT">Comment</option>
-            <option value="VERSION_SENT">Version sent</option>
-            <option value="VERSION_RECEIVED">Version received</option>
-            <option value="STATUS_CHANGE">Status change</option>
-          </select>
+    <div className="card stack-4">
+      <form onSubmit={logEvent} className="stack-3">
+        <div className="form-grid">
+          <div className="field">
+            <label htmlFor="event-type">Event type</label>
+            <select
+              id="event-type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
+              <option value="COMMENT">Comment</option>
+              <option value="VERSION_SENT">Version sent</option>
+              <option value="VERSION_RECEIVED">Version received</option>
+              <option value="STATUS_CHANGE">Status change</option>
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="event-note">Note</label>
+            <input
+              id="event-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Brief description"
+            />
+          </div>
         </div>
-        <div className="sm:col-span-3">
-          <label className="block text-xs font-medium mb-1">Note</label>
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full border rounded-md px-2 py-1.5 text-sm"
-            placeholder="Brief description"
-          />
+        <div>
+          <button type="submit" disabled={busy} className="btn btn-primary">
+            <MessageSquarePlus size={16} />
+            Log event
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={busy}
-          className="bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm disabled:opacity-50"
-        >
-          Log event
-        </button>
       </form>
 
-      <div className="border-t pt-3 flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">
-          Current status: <strong>{currentStatus.replace("_", " ")}</strong>
+      <div
+        style={{
+          borderTop: "1px solid var(--border)",
+          paddingTop: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div className="muted" style={{ fontSize: 13 }}>
+          Current status:{" "}
+          <strong style={{ color: "var(--text)" }}>
+            {currentStatus.replace("_", " ")}
+          </strong>
         </div>
         <button
           onClick={markSigned}
-          disabled={busy || currentStatus === "SIGNED" || currentStatus === "HANDED_OFF"}
-          className="bg-emerald-600 text-white px-4 py-1.5 rounded-md text-sm disabled:opacity-50 hover:bg-emerald-700"
+          disabled={
+            busy ||
+            currentStatus === "SIGNED" ||
+            currentStatus === "HANDED_OFF"
+          }
+          className="btn btn-success"
         >
+          <CheckCircle2 size={16} />
           Mark as signed
         </button>
       </div>
-      {error && <p className="text-xs text-rose-700">{error}</p>}
+      {error && <p className="error-text">{error}</p>}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { db } from "@/lib/db";
 import { DocumentUploader } from "./document-uploader";
 
@@ -20,69 +21,93 @@ export default async function LegalPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="stack-6">
       <div>
-        <h2 className="text-lg font-semibold">Phase 2 — Legal review</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
+          Phase 2 — Legal review
+        </h2>
+        <p className="sec-sub" style={{ marginTop: 4 }}>
           Upload the client&apos;s legal documents (MSA, SOW, NDA, DPA). Claude
-          will analyze them and propose protective redlines from In All
-          Media&apos;s vendor-side perspective.
+          will propose protective redlines from In All Media&apos;s vendor-side perspective.
         </p>
       </div>
 
-      <div className="border rounded-lg p-4">
-        <h3 className="text-xs font-medium uppercase text-muted-foreground mb-3">
+      <div className="card">
+        <div className="overline" style={{ marginBottom: 12 }}>
           Upload a new document
-        </h3>
+        </div>
         <DocumentUploader prospectId={id} />
       </div>
 
       <div>
-        <h3 className="text-xs font-medium uppercase text-muted-foreground mb-3">
-          Documents on file
-        </h3>
+        <div className="section-label">Documents on file</div>
         {documents.length === 0 ? (
-          <div className="border rounded-lg p-8 text-center text-muted-foreground">
-            No documents yet.
+          <div className="card">
+            <div className="empty-state">
+              <div className="empty-icon">
+                <FileText size={28} />
+              </div>
+              <h3>No documents yet</h3>
+              <p>Upload a contract to start the redline analysis.</p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="stack-3">
             {documents.map((d) => {
               const open = d.redlines.filter((r) => r.status === "OPEN").length;
               const accepted = d.redlines.filter(
                 (r) => r.status === "ACCEPTED"
               ).length;
+              const rejected = d.redlines.filter(
+                (r) => r.status === "REJECTED"
+              ).length;
               return (
                 <Link
                   key={d.id}
                   href={`/prospects/${id}/legal/${d.id}`}
-                  className="block border rounded-lg p-4 hover:bg-muted/30"
+                  className="card interactive"
+                  style={{ display: "block" }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">
-                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
-                          {d.kind}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                        <span className="badge badge-gray">{d.kind}</span>
+                        <span style={{ fontWeight: 600, fontSize: 15 }}>
+                          {d.title}
                         </span>
-                        {d.title}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="muted" style={{ fontSize: 13 }}>
                         {d.versions.length} version
                         {d.versions.length === 1 ? "" : "s"} ·{" "}
                         {d.redlines.length} redline
                         {d.redlines.length === 1 ? "" : "s"}
                       </div>
                     </div>
-                    <div className="text-xs text-right">
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                       {open > 0 && (
-                        <div className="text-amber-700 font-medium">
+                        <span className="badge badge-warning">
+                          <span className="badge-dot"></span>
                           {open} open
-                        </div>
+                        </span>
                       )}
                       {accepted > 0 && (
-                        <div className="text-emerald-700">
+                        <span className="badge badge-success">
+                          <span className="badge-dot"></span>
                           {accepted} accepted
-                        </div>
+                        </span>
+                      )}
+                      {rejected > 0 && (
+                        <span className="badge badge-gray">
+                          <span className="badge-dot"></span>
+                          {rejected} rejected
+                        </span>
                       )}
                     </div>
                   </div>

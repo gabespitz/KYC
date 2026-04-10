@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Upload } from "lucide-react";
 
 export function DocumentUploader({ prospectId }: { prospectId: string }) {
   const router = useRouter();
@@ -28,50 +29,54 @@ export function DocumentUploader({ prospectId }: { prospectId: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid sm:grid-cols-4 gap-3 items-end">
-      <div>
-        <label className="block text-xs font-medium mb-1">Title</label>
-        <input
-          name="title"
-          required
-          className="w-full border rounded-md px-2 py-1.5 text-sm"
-          placeholder="Master Services Agreement"
-        />
+    <form onSubmit={onSubmit} className="stack-4">
+      <div className="form-grid">
+        <div className="field">
+          <label htmlFor="uploader-title">Title</label>
+          <input
+            id="uploader-title"
+            name="title"
+            required
+            placeholder="Master Services Agreement"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="uploader-kind">Kind</label>
+          <select id="uploader-kind" name="kind" defaultValue="MSA">
+            <option>MSA</option>
+            <option>SOW</option>
+            <option>NDA</option>
+            <option>DPA</option>
+            <option>OTHER</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label className="block text-xs font-medium mb-1">Kind</label>
-        <select
-          name="kind"
-          className="w-full border rounded-md px-2 py-1.5 text-sm"
-          defaultValue="MSA"
-        >
-          <option>MSA</option>
-          <option>SOW</option>
-          <option>NDA</option>
-          <option>DPA</option>
-          <option>OTHER</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs font-medium mb-1">File</label>
+
+      <div className="field">
+        <label htmlFor="uploader-file">File (PDF, DOCX, TXT)</label>
         <input
+          id="uploader-file"
           name="file"
           type="file"
           required
           accept=".pdf,.docx,.txt,.md"
-          className="w-full text-sm"
         />
       </div>
-      <button
-        type="submit"
-        disabled={busy}
-        className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm disabled:opacity-50"
-      >
-        {busy ? "Uploading…" : "Upload"}
-      </button>
-      {error && (
-        <p className="sm:col-span-4 text-xs text-rose-700">{error}</p>
-      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit" disabled={busy} className="btn btn-primary">
+          {busy ? (
+            <>
+              <span className="spinner" /> Uploading…
+            </>
+          ) : (
+            <>
+              <Upload size={16} /> Upload document
+            </>
+          )}
+        </button>
+      </div>
+      {error && <p className="error-text">{error}</p>}
     </form>
   );
 }

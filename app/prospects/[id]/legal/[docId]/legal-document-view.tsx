@@ -1,7 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Download, Sparkles, Upload } from "lucide-react";
+import { riskBadge, riskCardClass } from "@/lib/badges";
 
 interface RedlineLite {
   id: string;
@@ -80,77 +81,124 @@ export function LegalDocumentView({
     }
   }
 
-  // Build text with highlighted regions for each redline.
   const text = currentVersion.extractedText;
   const fragments = highlightFragments(text, redlines, activeRedlineId);
+  const fileUrl = `/api/files/${Buffer.from(currentVersion.storageKey).toString("base64url")}`;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="stack-4">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
         <div>
-          <h2 className="text-lg font-semibold">
-            <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
-              {document.kind}
-            </span>
-            {document.title}
-          </h2>
-          <div className="text-xs text-muted-foreground mt-1">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span className="badge badge-gray">{document.kind}</span>
+            <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
+              {document.title}
+            </h2>
+          </div>
+          <div className="muted" style={{ fontSize: 13 }}>
             v{currentVersion.versionNumber} · {currentVersion.fileName}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: 8 }}>
           <a
-            href={`/api/files/${Buffer.from(currentVersion.storageKey).toString("base64url")}`}
+            href={fileUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted/50"
+            className="btn btn-secondary"
           >
+            <Download size={16} />
             Download original
           </a>
           <button
             onClick={analyze}
             disabled={analyzing}
-            className="bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm disabled:opacity-50"
+            className="btn btn-primary"
           >
-            {analyzing ? "Analyzing…" : "Analyze with Claude"}
+            {analyzing ? (
+              <>
+                <span className="spinner" /> Analyzing…
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} /> Analyze with Claude
+              </>
+            )}
           </button>
         </div>
       </div>
-      {error && <p className="text-sm text-rose-700">{error}</p>}
+
+      {error && <p className="error-text">{error}</p>}
 
       <VersionUploader documentId={document.id} prospectId={prospectId} />
 
-      <div className="text-xs text-muted-foreground">
-        Versions:{" "}
-        {versions
-          .map(
-            (v) =>
-              `v${v.versionNumber} (${v.source.toLowerCase()}, ${v.fileName})`
-          )
-          .join(" → ")}
-      </div>
+      {versions.length > 1 && (
+        <div className="muted" style={{ fontSize: 12 }}>
+          <strong>History:</strong>{" "}
+          {versions
+            .map(
+              (v) =>
+                `v${v.versionNumber} (${v.source.toLowerCase()}, ${v.fileName})`
+            )
+            .join(" → ")}
+        </div>
+      )}
 
-      <div className="grid lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 border rounded-lg p-4 bg-white max-h-[70vh] overflow-y-auto">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)",
+          gap: 16,
+        }}
+        className="redline-grid"
+      >
+        <div
+          className="card"
+          style={{
+            padding: 20,
+            maxHeight: "70vh",
+            overflowY: "auto",
+          }}
+        >
           {text.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="muted" style={{ fontSize: 14 }}>
               No extracted text. The file may be image-based — re-upload as a
               text PDF or DOCX.
             </p>
           ) : (
-            <pre className="whitespace-pre-wrap text-xs leading-relaxed font-sans">
+            <pre
+              className="num"
+              style={{
+                whiteSpace: "pre-wrap",
+                fontSize: 12,
+                lineHeight: 1.65,
+                color: "var(--text)",
+                margin: 0,
+              }}
+            >
               {fragments}
             </pre>
           )}
         </div>
-        <div className="lg:col-span-2 space-y-3 max-h-[70vh] overflow-y-auto">
-          <h3 className="text-xs font-medium uppercase text-muted-foreground sticky top-0 bg-background py-1">
+        <div
+          className="stack-3"
+          style={{ maxHeight: "70vh", overflowY: "auto" }}
+        >
+          <div className="section-label" style={{ position: "sticky", top: 0, background: "var(--bg)", zIndex: 1, marginBottom: 0, padding: "4px 0" }}>
             Redlines ({redlines.length})
-          </h3>
+          </div>
           {redlines.length === 0 ? (
-            <div className="border rounded-lg p-4 text-sm text-muted-foreground">
-              No redlines yet. Click <strong>Analyze with Claude</strong> to
-              generate.
+            <div className="card">
+              <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+                No redlines yet. Click <strong>Analyze with Claude</strong> to generate.
+              </p>
             </div>
           ) : (
             redlines.map((r) => (
@@ -166,19 +214,27 @@ export function LegalDocumentView({
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 900px) {
+          .redline-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
 function VersionUploader({
   documentId,
-  prospectId: _prospectId,
 }: {
   documentId: string;
   prospectId: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -193,40 +249,39 @@ function VersionUploader({
       router.refresh();
     }
   }
+
   return (
     <form
       onSubmit={onSubmit}
-      className="border rounded-lg p-3 flex gap-3 items-end"
+      className="card"
+      style={{ padding: 16, display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}
     >
-      <div className="flex-1">
-        <label className="block text-xs font-medium mb-1">
-          Upload new version
-        </label>
+      <div className="field" style={{ flex: "1 1 220px" }}>
+        <label>Upload new version</label>
         <input
           name="file"
           type="file"
           required
           accept=".pdf,.docx,.txt,.md"
-          className="text-sm"
         />
       </div>
-      <div>
-        <label className="block text-xs font-medium mb-1">From</label>
-        <select
-          name="source"
-          className="border rounded-md px-2 py-1.5 text-sm"
-          defaultValue="CLIENT"
-        >
+      <div className="field" style={{ flex: "0 0 200px" }}>
+        <label>From</label>
+        <select name="source" defaultValue="CLIENT">
           <option value="CLIENT">Client (received)</option>
           <option value="US">In All Media (sent)</option>
         </select>
       </div>
-      <button
-        type="submit"
-        disabled={busy}
-        className="bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm disabled:opacity-50"
-      >
-        {busy ? "Uploading…" : "Add version"}
+      <button type="submit" disabled={busy} className="btn btn-secondary">
+        {busy ? (
+          <>
+            <span className="spinner" /> Uploading…
+          </>
+        ) : (
+          <>
+            <Upload size={16} /> Add version
+          </>
+        )}
       </button>
     </form>
   );
@@ -246,54 +301,73 @@ function RedlineCard({
   onChangeNote: (note: string) => void;
 }) {
   const [note, setNote] = useState(redline.humanNote ?? "");
+  const rb = riskBadge(redline.riskLevel);
   return (
     <div
       onClick={onClick}
-      className={cn(
-        "border rounded-lg p-3 cursor-pointer transition-colors",
-        active ? "ring-2 ring-primary" : "hover:bg-muted/30",
-        `risk-${redline.riskLevel.toLowerCase()}`
-      )}
+      className={`${riskCardClass(redline.riskLevel)} ${active ? "active" : ""}`}
+      style={{ cursor: "pointer" }}
     >
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex gap-2 items-center">
-          <span className="font-mono font-medium">{redline.clauseId}</span>
-          <span className="px-1.5 py-0.5 rounded bg-white border text-[10px]">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          marginBottom: 8,
+          fontSize: 12,
+        }}
+      >
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <span className="num" style={{ fontWeight: 600 }}>
+            {redline.clauseId}
+          </span>
+          <span className="badge badge-gray" style={{ fontSize: 10 }}>
             {redline.category}
           </span>
-          <span className="font-medium">{redline.riskLevel}</span>
+          <span className={rb.className}>
+            <span className="badge-dot"></span>
+            {rb.label}
+          </span>
         </div>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="subtle" style={{ fontSize: 10 }}>
           {redline.createdBy}
         </span>
       </div>
-      <div className="mt-2 text-xs">
-        <div className="text-muted-foreground line-clamp-2">
-          <span className="font-medium">Original: </span>
-          {redline.originalText}
+      <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+        <div className="muted" style={{ marginBottom: 4 }}>
+          <strong>Original: </strong>
+          <span style={{ fontStyle: "italic" }}>{truncate(redline.originalText, 180)}</span>
         </div>
-        <div className="mt-1 text-foreground">
-          <span className="font-medium">Suggest: </span>
-          {redline.suggestedText}
+        <div style={{ color: "var(--text)", marginBottom: 4 }}>
+          <strong>Suggest: </strong>
+          {truncate(redline.suggestedText, 180)}
         </div>
-        <div className="mt-1 text-muted-foreground italic">
+        <div className="muted" style={{ fontStyle: "italic" }}>
           {redline.rationale}
         </div>
       </div>
-      <div className="mt-2 flex gap-1 items-center">
+      <div style={{ display: "flex", gap: 4, marginTop: 10, flexWrap: "wrap" }}>
         {(["OPEN", "ACCEPTED", "MODIFIED", "REJECTED"] as const).map((s) => (
           <button
             key={s}
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onChangeStatus(s);
             }}
-            className={cn(
-              "text-[10px] px-2 py-0.5 rounded border",
+            className="btn btn-secondary btn-sm"
+            style={
               redline.status === s
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-white"
-            )}
+                ? {
+                    background: "var(--primary)",
+                    color: "#fff",
+                    borderColor: "var(--primary)",
+                    fontSize: 11,
+                    padding: "4px 8px",
+                  }
+                : { fontSize: 11, padding: "4px 8px" }
+            }
           >
             {s}
           </button>
@@ -301,19 +375,23 @@ function RedlineCard({
       </div>
       <input
         value={note}
-        placeholder="Note"
+        placeholder="Add a note..."
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => setNote(e.target.value)}
         onBlur={() => {
           if (note !== (redline.humanNote ?? "")) onChangeNote(note);
         }}
-        className="mt-2 w-full text-xs border rounded px-2 py-1"
+        style={{ marginTop: 8, fontSize: 12, padding: "6px 10px" }}
       />
     </div>
   );
 }
 
-// Render the document text with each redline's originalText highlighted.
+function truncate(s: string, n: number): string {
+  if (s.length <= n) return s;
+  return s.slice(0, n).trimEnd() + "…";
+}
+
 function highlightFragments(
   text: string,
   redlines: RedlineLite[],
@@ -333,7 +411,6 @@ function highlightFragments(
   }
   matches.sort((a, b) => a.start - b.start);
 
-  // Filter out overlaps (keep first)
   const filtered: typeof matches = [];
   let lastEnd = -1;
   for (const m of matches) {
@@ -352,12 +429,12 @@ function highlightFragments(
     out.push(
       <mark
         key={`m-${i}`}
-        className={cn(
-          "rounded px-0.5",
-          m.redline.id === activeId
-            ? "bg-yellow-300"
-            : riskBg(m.redline.riskLevel)
-        )}
+        style={{
+          borderRadius: 3,
+          padding: "0 2px",
+          background:
+            m.redline.id === activeId ? "#fde68a" : riskBg(m.redline.riskLevel),
+        }}
       >
         {text.slice(m.start, m.end)}
       </mark>
@@ -365,19 +442,14 @@ function highlightFragments(
     cursor = m.end;
   });
   if (cursor < text.length) out.push(text.slice(cursor));
-
   return out;
 }
 
-function riskBg(level: string) {
+function riskBg(level: string): string {
   switch (level) {
-    case "CRITICAL":
-      return "bg-rose-200";
-    case "HIGH":
-      return "bg-orange-200";
-    case "MEDIUM":
-      return "bg-amber-200";
-    default:
-      return "bg-emerald-200";
+    case "CRITICAL": return "#fecaca";
+    case "HIGH":     return "#fed7aa";
+    case "MEDIUM":   return "#fde68a";
+    default:         return "#bbf7d0";
   }
 }

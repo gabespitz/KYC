@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Send, Sparkles, RefreshCw } from "lucide-react";
 import type { CoderfullClientInput, HandoffEmail } from "@/lib/claude/schemas";
 
 interface ExportState {
@@ -84,109 +85,134 @@ export function HandoffControls({
     router.refresh();
   }
 
+  const statusBadgeClassName =
+    initialExport?.status === "SENT"
+      ? "badge badge-success"
+      : initialExport?.status === "FAILED"
+      ? "badge badge-error"
+      : "badge badge-brand";
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between border rounded-lg p-4">
-        <div className="text-sm">
-          {initialExport ? (
-            <>
-              <div>
-                Status:{" "}
-                <span className="font-medium">{initialExport.status}</span>
-              </div>
-              {initialExport.externalId && (
-                <div className="text-xs font-mono text-muted-foreground mt-1">
-                  Coderfull ID: {initialExport.externalId}
-                </div>
-              )}
-              {initialExport.error && (
-                <div className="text-xs text-rose-700 mt-1">
-                  {initialExport.error}
-                </div>
-              )}
-            </>
-          ) : (
-            <span className="text-muted-foreground">No draft yet</span>
-          )}
+    <div className="stack-4">
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div className="overline" style={{ marginBottom: 6 }}>
+              Draft status
+            </div>
+            {initialExport ? (
+              <>
+                <span className={statusBadgeClassName}>
+                  <span className="badge-dot"></span>
+                  {initialExport.status}
+                </span>
+                {initialExport.externalId && (
+                  <div className="muted num" style={{ fontSize: 12, marginTop: 8 }}>
+                    Coderfull ID: {initialExport.externalId}
+                  </div>
+                )}
+                {initialExport.error && (
+                  <div className="error-text" style={{ marginTop: 8 }}>
+                    {initialExport.error}
+                  </div>
+                )}
+              </>
+            ) : (
+              <span className="muted" style={{ fontSize: 14 }}>
+                No draft yet
+              </span>
+            )}
+          </div>
+          <button onClick={draft} disabled={busy} className="btn btn-primary">
+            {busy ? (
+              <>
+                <span className="spinner" /> Working…
+              </>
+            ) : initialExport ? (
+              <>
+                <RefreshCw size={16} /> Re-draft with Claude
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} /> Draft with Claude
+              </>
+            )}
+          </button>
         </div>
-        <button
-          onClick={draft}
-          disabled={busy}
-          className="bg-primary text-primary-foreground px-4 py-1.5 rounded-md text-sm disabled:opacity-50"
-        >
-          {busy
-            ? "Working…"
-            : initialExport
-            ? "Re-draft with Claude"
-            : "Draft with Claude"}
-        </button>
       </div>
 
       {!canSend && (
-        <p className="text-xs text-amber-700 border-l-4 border-amber-400 pl-3 py-1">
-          Mark the prospect as <strong>SIGNED</strong> before sending the
-          handoff.
-        </p>
+        <div
+          className="card"
+          style={{
+            borderLeft: "4px solid var(--warning-500)",
+            padding: 14,
+            background: "var(--warning-50)",
+          }}
+        >
+          <p style={{ fontSize: 13, margin: 0, color: "var(--warning-700)" }}>
+            Mark the prospect as <strong>SIGNED</strong> before sending the
+            handoff.
+          </p>
+        </div>
       )}
 
       {initialExport && (
-        <div className="grid lg:grid-cols-2 gap-4">
-          <div className="border rounded-lg p-4 space-y-2">
-            <h3 className="text-xs font-medium uppercase text-muted-foreground">
+        <div className="action-grid">
+          <div className="card">
+            <div className="overline" style={{ marginBottom: 10 }}>
               Coderfull payload
-            </h3>
+            </div>
             <textarea
               value={payloadText}
               onChange={(e) => setPayloadText(e.target.value)}
-              rows={20}
-              className="w-full font-mono text-xs border rounded-md p-2"
+              rows={18}
+              className="mono"
+              style={{ minHeight: 360 }}
             />
           </div>
-          <div className="border rounded-lg p-4 space-y-2">
-            <h3 className="text-xs font-medium uppercase text-muted-foreground">
-              Accounts email
-            </h3>
-            <div>
-              <label className="block text-xs font-medium mb-1">To</label>
+          <div className="card stack-3">
+            <div className="overline">Accounts email</div>
+            <div className="field">
+              <label>To</label>
               <input
                 value={emailTo}
                 onChange={(e) => setEmailTo(e.target.value)}
-                className="w-full border rounded-md px-2 py-1.5 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">Subject</label>
+            <div className="field">
+              <label>Subject</label>
               <input
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
-                className="w-full border rounded-md px-2 py-1.5 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">
-                Body (markdown)
-              </label>
+            <div className="field">
+              <label>Body (markdown)</label>
               <textarea
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
                 rows={12}
-                className="w-full border rounded-md p-2 text-xs font-mono"
+                className="mono"
               />
             </div>
           </div>
         </div>
       )}
 
-      {error && <p className="text-sm text-rose-700">{error}</p>}
+      {error && <p className="error-text">{error}</p>}
 
       {initialExport && (
-        <button
-          onClick={send}
-          disabled={busy || !canSend}
-          className="bg-emerald-600 text-white px-5 py-2 rounded-md text-sm disabled:opacity-50 hover:bg-emerald-700"
-        >
-          {busy ? "Sending…" : "Send to Coderfull & notify Accounts"}
-        </button>
+        <div>
+          <button
+            onClick={send}
+            disabled={busy || !canSend}
+            className="btn btn-success"
+          >
+            <Send size={16} />
+            {busy ? "Sending…" : "Send to Coderfull & notify Accounts"}
+          </button>
+        </div>
       )}
     </div>
   );

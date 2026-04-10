@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Plus, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatRelative } from "@/lib/utils";
+import { statusBadge, decisionBadge } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
 
@@ -16,75 +18,111 @@ export default async function ProspectsListPage({
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div>
+      <div
+        className="sec-head"
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-semibold">Prospects</h1>
-          {status && (
-            <p className="text-sm text-muted-foreground">
+          <h1 className="sec-title">Prospects</h1>
+          {status ? (
+            <p className="sec-sub">
               Filtered by status:{" "}
-              <span className="font-medium">{status.replace("_", " ")}</span>{" "}
+              <span style={{ fontWeight: 600, color: "var(--text)" }}>
+                {status.replace("_", " ")}
+              </span>{" "}
               ·{" "}
-              <Link href="/prospects" className="underline">
+              <Link href="/prospects" style={{ textDecoration: "underline" }}>
                 clear
               </Link>
             </p>
+          ) : (
+            <p className="sec-sub">
+              All prospects across every lifecycle stage.
+            </p>
           )}
         </div>
-        <Link
-          href="/prospects/new"
-          className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm hover:opacity-90"
-        >
-          + New prospect
+        <Link href="/prospects/new" className="btn btn-primary">
+          <Plus size={16} />
+          New prospect
         </Link>
       </div>
 
       {prospects.length === 0 ? (
-        <div className="border rounded-lg p-8 text-center text-muted-foreground">
-          No prospects found.
+        <div className="card">
+          <div className="empty-state">
+            <div className="empty-icon">
+              <Users size={28} />
+            </div>
+            <h3>No prospects found</h3>
+            <p>
+              {status
+                ? "Try clearing the filter or create a new prospect."
+                : "Create your first prospect to start the KYC process."}
+            </p>
+            <Link href="/prospects/new" className="btn btn-primary">
+              <Plus size={16} />
+              New prospect
+            </Link>
+          </div>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr className="text-left">
-                <th className="px-4 py-2 font-medium">Legal name</th>
-                <th className="px-4 py-2 font-medium">Industry</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium">Decision</th>
-                <th className="px-4 py-2 font-medium">Updated</th>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Legal name</th>
+                <th>Industry</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Decision</th>
+                <th style={{ textAlign: "right" }}>Updated</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {prospects.map((p) => (
-                <tr key={p.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-2">
-                    <Link href={`/prospects/${p.id}`} className="text-primary hover:underline">
-                      {p.legalName}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {p.industry ?? "—"}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className={`badge badge-${p.status.toLowerCase()}`}>
-                      {p.status.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">
-                    {p.decision ? (
-                      <span className={`badge badge-${p.decision.toLowerCase()}`}>
-                        {p.decision}
+            <tbody>
+              {prospects.map((p) => {
+                const s = statusBadge(p.status);
+                const d = decisionBadge(p.decision);
+                return (
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 600 }}>
+                      <Link
+                        href={`/prospects/${p.id}`}
+                        style={{ color: "var(--text)" }}
+                      >
+                        {p.legalName}
+                      </Link>
+                    </td>
+                    <td className="muted">{p.industry ?? "—"}</td>
+                    <td className="muted" style={{ fontSize: 13 }}>
+                      {p.contactName ?? "—"}
+                    </td>
+                    <td>
+                      <span className={s.className}>
+                        <span className="badge-dot"></span>
+                        {s.label}
                       </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {formatRelative(p.updatedAt)}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <span className={d.className}>
+                        <span className="badge-dot"></span>
+                        {d.label}
+                      </span>
+                    </td>
+                    <td
+                      className="muted"
+                      style={{ textAlign: "right", fontSize: 13 }}
+                    >
+                      {formatRelative(p.updatedAt)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

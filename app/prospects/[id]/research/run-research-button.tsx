@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Play, RefreshCw } from "lucide-react";
 
 export function RunResearchButton({
   id,
@@ -30,20 +31,36 @@ export function RunResearchButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
       <button
         onClick={run}
         disabled={running}
-        className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm hover:opacity-90 disabled:opacity-50"
+        className="btn btn-primary"
       >
-        {running ? "Researching…" : hasReport ? "Re-run research" : "Run research"}
+        {running ? (
+          <>
+            <span className="spinner" /> Researching…
+          </>
+        ) : hasReport ? (
+          <>
+            <RefreshCw size={16} /> Re-run research
+          </>
+        ) : (
+          <>
+            <Play size={16} /> Run research
+          </>
+        )}
       </button>
       {running && (
-        <p className="text-xs text-muted-foreground">
+        <p className="muted" style={{ fontSize: 12, margin: 0 }}>
           Claude is searching the web. This may take 1–3 minutes.
         </p>
       )}
-      {error && <p className="text-xs text-rose-700 max-w-xs text-right">{error}</p>}
+      {error && (
+        <p className="error-text" style={{ maxWidth: 280, textAlign: "right" }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

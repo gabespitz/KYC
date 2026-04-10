@@ -25,14 +25,16 @@ export default async function HandoffPage({
     : null;
 
   return (
-    <div className="space-y-6">
+    <div className="stack-6">
       <div>
-        <h2 className="text-lg font-semibold">Phase 4 — Coderfull handoff</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
+          Phase 4 — Coderfull handoff
+        </h2>
+        <p className="sec-sub" style={{ marginTop: 4 }}>
           Once the client has signed, generate a Coderfull payload and a
-          notification email for the Accounts team. Send to push the client
+          notification email for the Accounts team. Sending pushes the client
           into Coderfull (mock implementation writes to{" "}
-          <code className="text-xs bg-muted px-1 rounded">
+          <code className="num" style={{ fontSize: 12, background: "var(--surface-2)", padding: "1px 6px", borderRadius: 4 }}>
             ./uploads/coderfull-outbox/
           </code>
           ).
@@ -41,7 +43,9 @@ export default async function HandoffPage({
 
       <HandoffControls
         id={id}
-        canSend={prospect?.status === "SIGNED" || prospect?.status === "HANDED_OFF"}
+        canSend={
+          prospect?.status === "SIGNED" || prospect?.status === "HANDED_OFF"
+        }
         export={
           exp
             ? {

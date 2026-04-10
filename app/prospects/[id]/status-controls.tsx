@@ -36,16 +36,13 @@ export function ProspectStatusControls({
   }
 
   return (
-    <div className="flex flex-wrap gap-4">
-      <div>
-        <label className="block text-xs uppercase text-muted-foreground mb-1">
-          Status
-        </label>
+    <div className="form-grid">
+      <div className="field">
+        <label>Status</label>
         <select
           value={status}
           disabled={busy}
           onChange={(e) => update({ status: e.target.value })}
-          className="border rounded-md px-3 py-1.5 text-sm"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -54,22 +51,19 @@ export function ProspectStatusControls({
           ))}
         </select>
       </div>
-      <div>
-        <label className="block text-xs uppercase text-muted-foreground mb-1">
-          Decision
-        </label>
+      <div className="field">
+        <label>Decision (GO / HOLD / NO-GO)</label>
         <select
           value={decision ?? ""}
           disabled={busy}
           onChange={(e) =>
             update({ decision: e.target.value === "" ? null : e.target.value })
           }
-          className="border rounded-md px-3 py-1.5 text-sm"
         >
-          <option value="">— none —</option>
+          <option value="">— pending —</option>
           {DECISIONS.map((d) => (
             <option key={d} value={d}>
-              {d}
+              {d.replace("_", "-")}
             </option>
           ))}
         </select>

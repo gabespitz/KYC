@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { ProspectStatusControls } from "./status-controls";
+import { decisionBadge } from "@/lib/badges";
 
 export const dynamic = "force-dynamic";
 
@@ -27,102 +28,109 @@ export default async function ProspectOverviewPage({
     (acc, d) => acc + d.redlines.filter((r) => r.status === "OPEN").length,
     0
   );
+  const rec = decisionBadge(latestResearch?.recommendation ?? null);
 
   return (
-    <div className="space-y-6">
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Contact">
-          <Field label="Name" value={prospect.contactName ?? "—"} />
-          <Field label="Email" value={prospect.contactEmail ?? "—"} />
-          <Field label="Phone" value={prospect.contactPhone ?? "—"} />
-        </Card>
-        <Card title="Notes">
-          <p className="text-sm whitespace-pre-wrap">
+    <div className="stack-6">
+      <div className="action-grid">
+        <div className="card">
+          <div className="overline" style={{ marginBottom: 12 }}>
+            Contact
+          </div>
+          <div className="stack-2">
+            <Field label="Name" value={prospect.contactName ?? "—"} />
+            <Field label="Email" value={prospect.contactEmail ?? "—"} />
+            <Field label="Phone" value={prospect.contactPhone ?? "—"} />
+          </div>
+        </div>
+        <div className="card">
+          <div className="overline" style={{ marginBottom: 12 }}>
+            Internal notes
+          </div>
+          <p style={{ fontSize: 14, whiteSpace: "pre-wrap", margin: 0 }}>
             {prospect.notes || (
-              <span className="text-muted-foreground">No notes</span>
+              <span className="muted">No notes recorded.</span>
             )}
           </p>
-        </Card>
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card title="Research">
+      <div className="metric-grid">
+        <div className="card">
+          <div className="overline" style={{ marginBottom: 10 }}>
+            Phase 1 — Research
+          </div>
           {latestResearch ? (
             <>
-              <p className="text-sm">{latestResearch.summary}</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Recommendation:{" "}
-                <span className="font-medium">
-                  {latestResearch.recommendation}
+              <div style={{ marginBottom: 10 }}>
+                <span className={`${rec.className} badge-lg`}>
+                  <span className="badge-dot"></span>
+                  {rec.label}
                 </span>
+              </div>
+              <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>
+                {latestResearch.summary}
               </p>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="muted" style={{ fontSize: 13, margin: 0 }}>
               No research report yet.
             </p>
           )}
-        </Card>
-        <Card title="Legal">
-          <p className="text-sm">
-            {docCount} document{docCount === 1 ? "" : "s"} on file
+        </div>
+        <div className="card">
+          <div className="overline" style={{ marginBottom: 10 }}>
+            Phase 2 — Legal
+          </div>
+          <div className="num" style={{ fontSize: 28, fontWeight: 600, color: "var(--text)", lineHeight: 1 }}>
+            {docCount}
+          </div>
+          <p className="muted" style={{ fontSize: 13, marginTop: 6, marginBottom: 0 }}>
+            document{docCount === 1 ? "" : "s"} on file · {openRedlines} open redline{openRedlines === 1 ? "" : "s"}
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {openRedlines} open redline{openRedlines === 1 ? "" : "s"}
-          </p>
-        </Card>
-        <Card title="Handoff">
+        </div>
+        <div className="card">
+          <div className="overline" style={{ marginBottom: 10 }}>
+            Phase 4 — Handoff
+          </div>
           {prospect.exports[0] ? (
             <>
-              <p className="text-sm">
-                Status:{" "}
-                <span className="font-medium">{prospect.exports[0].status}</span>
-              </p>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>
+                {prospect.exports[0].status}
+              </div>
               {prospect.exports[0].externalId && (
-                <p className="text-xs text-muted-foreground mt-2 font-mono">
+                <p className="muted num" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
                   {prospect.exports[0].externalId}
                 </p>
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Not yet handed off.</p>
+            <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+              Not yet handed off.
+            </p>
           )}
-        </Card>
+        </div>
       </div>
 
-      <Card title="Pipeline controls">
+      <div className="card">
+        <div className="overline" style={{ marginBottom: 12 }}>
+          Pipeline controls
+        </div>
         <ProspectStatusControls
           id={prospect.id}
           status={prospect.status}
           decision={prospect.decision}
         />
-      </Card>
-    </div>
-  );
-}
-
-function Card({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border rounded-lg p-4">
-      <h3 className="text-xs font-medium uppercase text-muted-foreground mb-3">
-        {title}
-      </h3>
-      {children}
+      </div>
     </div>
   );
 }
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-sm">
-      <span className="text-muted-foreground">{label}:</span>{" "}
-      <span className="font-medium">{value}</span>
+    <div style={{ fontSize: 14 }}>
+      <span className="muted">{label}:</span>{" "}
+      <span style={{ fontWeight: 500 }}>{value}</span>
     </div>
   );
 }
